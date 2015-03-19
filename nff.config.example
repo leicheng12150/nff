@@ -1,0 +1,6 @@
+my_IP : "0.0.0.0"
+logfile : nff.log
+backlog : 10
+listen_port : 2203
+destination_IPs : ["127.0.0.1","1.1.1.1"]
+
