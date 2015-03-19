@@ -1,4 +1,4 @@
-import socket,yaml
+import socket,yaml,sys
 from socket import inet_ntoa
 from datetime import datetime
 
@@ -18,6 +18,7 @@ dsocket=list()
 def read_conf():
 #here comes reading a file and setting up all the variables
     global log_file
+    global listen_port
     global nflow
     global myIP
 
@@ -27,6 +28,7 @@ def read_conf():
     log_file = data['logfile']
     nflow=5
     destIP=data['destination_IPs']
+    listen_port=data['listen_port']
     if data['my_IP']!="": 
         myIP=data['my_IP']
     else: 
@@ -62,15 +64,19 @@ def open_socket():
 def do_forward():
 #receive packets and forward them to other ifaces
     global rsocket
-
-    data, addr = rsocket.recvfrom(1500)
+    try:
+        data, addr = rsocket.recvfrom(1500)
+    except (KeyboardInterrupt, SystemExit ):
+        log("User interrupted the program")
+        close_socket()
+        sys.exit()
     log ("received data from "+addr)
     for item in range(len(destIP)):
         try:
             dsocket[item].sendto(data,(destIP[item],netflow_port))
         except socket.error as msg:
             log(msg)
-        except KeyboardInterrupt,SystemExit:
+        except (KeyboardInterrupt, SystemExit ):
             log("User interrupted the program")
             close_socket()
             sys.exit()
