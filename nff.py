@@ -1,13 +1,15 @@
-import socket
+import socket,yaml
 from socket import inet_ntoa
 from datetime import datetime
 
-log_file=''
+log_file='nff.log'
+conf_file='nff.config'
 nflow=0
 
 myIP=""
-netflow_port=2303
+listen_port=2303
 backlog = 10
+netflow_port=2303
 
 destIP=list()
 rsocket=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,10 +20,18 @@ def read_conf():
     global log_file
     global nflow
     global myIP
-    log_file = 'nff.log'
+
+    f=open(conf_file,'r')
+    data=yaml.load(f)
+
+    log_file = data['logfile']
     nflow=5
-    myIP=socket.gethostname()
-    destIP.append('127.0.0.1')
+    destIP=data['destination_IPs']
+    if data['my_IP']!="": 
+        myIP=data['my_IP']
+    else: 
+        myIP=socket.gethostname()
+    f.close 
     return
 
 def open_socket():
@@ -34,7 +44,7 @@ def open_socket():
     except socket.error as msg:
         log (msg)
     try:
-        rsocket.bind(('0.0.0.0', netflow_port))
+        rsocket.bind((myIP, listen_port))
     except socket.error as msg:
         log(msg)
         s.close()
@@ -60,6 +70,10 @@ def do_forward():
             dsocket[item].sendto(data,(destIP[item],netflow_port))
         except socket.error as msg:
             log(msg)
+        except KeyboardInterrupt,SystemExit:
+            log("User interrupted the program")
+            close_socket()
+            sys.exit()
     return
 
 def close_socket():
